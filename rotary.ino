@@ -36,7 +36,7 @@ const int RGB_WHITE=7;
 int interrupt_count=0;
 const int ROTARY_TIMEOUT = 2;
 int rotary_position=0; // Clicks of rotary switch
-int rotary_quarters=0; // Transitions of gray code (4 to a click) 
+int rotary_quarters=2; // Transitions of gray code (4 to a click). Set to 2 so that you have the same amount of quarters to go in either direction to effect a change. 
 int rotary_last_graycode; // initialized from pins in setup
 
 // Callback when the rotary has moved one or more clicks.
