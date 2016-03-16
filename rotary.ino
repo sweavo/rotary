@@ -32,6 +32,11 @@
 #define PIN_LED_BLUE 8
 #define PIN_LED_GREEN 9
 #define PIN_LED_RED 10
+// Buttons
+#define PIN_BUTTON_RED 4 // TODO find more pins! By moving the rotary or LEDs
+#define PIN_BUTTON_GREEN 6
+#define PIN_BUTTON_BLUE 5
+#define PIN_BUTTON_LELLOW 6
 
 ////////////////////////////////////////////////////////////////////////////////
 // RGB
@@ -182,14 +187,48 @@ void initLED() {
   pinMode( PIN_LED_LELLOW, OUTPUT );
 }
 
-void setLED( int color )
-{
+void setLED( int color ){
   digitalWrite( PIN_LED_RED, color == RGB_RED );
   digitalWrite( PIN_LED_GREEN, color == RGB_GREEN );
   digitalWrite( PIN_LED_BLUE, color == RGB_BLUE );
   digitalWrite( PIN_LED_LELLOW, color == RGB_LELLOW );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Buttons
+////////////////////////////////////////////////////////////////////////////////
+
+#define BUTTON_MASK ( ( 2<<PIN_BUTTON_RED ) | ( 2<<PIN_BUTTON_GREEN ) | ( 2<<PIN_BUTTON_BLUE ) | ( 2<<PIN_BUTTON_LELLOW ) )
+ 
+void initButtons() {
+  pinMode( PIN_BUTTON_RED, INPUT );
+  pinMode( PIN_BUTTON_GREEN, INPUT );
+  pinMode( PIN_BUTTON_BLUE, INPUT );
+  pinMode( PIN_BUTTON_LELLOW, INPUT );
+}
+
+int button_last_state = 0;
+int readButtonsRaw() {
+  // Returns the index of the pushed button, not a bitmask.
+  return digitalRead( PIN_BUTTON_RED ) ? 1
+        : digitalRead( PIN_BUTTON_GREEN ) ? 2 
+        : digitalRead( PIN_BUTTON_BLUE ) ? 3 
+        : digitalRead( PIN_BUTTON_LELLOW ) ? 4 :0;
+}
+bool readButtonsBlocking() {
+  if ( readButtonsRaw() != button_last_state ) 
+  {
+    Serial.print( "button\n" );
+    delay( 10 );
+    int readButtons = readButtonsRaw();
+    if ( readButtons != button_last_state ) 
+    {
+      button_last_state = readButtons;
+      return true;
+    }
+  }
+  return false;
+}
 ////////////////////////////////////////////////////////////////////////////////
 // APPLICATION CODE
 ////////////////////////////////////////////////////////////////////////////////
@@ -231,5 +270,13 @@ void setup() {
 
 void loop() 
 {
+  if ( readButtonsBlocking() )
+  {
+    Serial.print( "buttons changed\n");
+    Serial.print( button_last_state );
+    Serial.print( "\n" );
+    cbk_rotarychange( button_last_state );
+  }
+  
 }
 
