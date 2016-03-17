@@ -218,7 +218,6 @@ int readButtonsRaw() {
 bool readButtonsBlocking() {
   if ( readButtonsRaw() != button_last_state ) 
   {
-    Serial.print( "button\n" );
     delay( 10 );
     int readButtons = readButtonsRaw();
     if ( readButtons != button_last_state ) 
@@ -229,9 +228,38 @@ bool readButtonsBlocking() {
   }
   return false;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Melody
+////////////////////////////////////////////////////////////////////////////////
+#include "pitches.h"
+void play_melody( int pin, int period, const int melody[][2], void (*callback)(int) ) {
+  // iterate over the notes of the melody:
+  for (int thisNote = 0; melody[thisNote][1]; thisNote++) {
+
+    // to calculate the note duration, take one second
+    // divided by the note type.
+    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+    int noteDuration = period / melody[thisNote][1];
+    tone(pin, melody[thisNote][0], noteDuration);
+    if ( callback ) {
+      (*callback)(melody[thisNote][0]);
+    }
+    // to distinguish the notes, set a minimum time between them.
+    // the note's duration + 30% seems to work well:
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    // stop the tone playing:
+    noTone(pin);
+    if ( callback ) {
+      (*callback)(0);
+    }
+  }
+}
 ////////////////////////////////////////////////////////////////////////////////
 // APPLICATION CODE
 ////////////////////////////////////////////////////////////////////////////////
+#include "tunes.h"
 
 // A sequence of colors to show the rotary working
 const int sequence[] = { RGB_BLACK, RGB_RED, RGB_GREEN, RGB_BLUE, RGB_LELLOW };
@@ -248,6 +276,16 @@ void cbk_rotarychange( int pos )
   Serial.print( '\n' );
 }
 
+// Note values are disappointingly nonrandom when it comes to lighting LEDs.
+// perturb the values here to get more variety
+void cbk_hashnotes( int note )
+{
+  if (note) {
+    cbk_rotarychange( 1  + ((note ^ (note >> 4 ) ^ (note >> 8) ^ (note >> 12)) % (SEQ_LENGTH-1)) );
+  } else {
+    cbk_rotarychange( 0 );
+  }
+}
 void setup() {
   // LEDs in rotary switch
   initRGB();
@@ -267,15 +305,88 @@ void setup() {
   Serial.begin(9600);
 }
 
+#define STATE_MENU 0
+#define STATE_SIMON_START 1
+#define STATE_SIMON 2
+#define STATE_SIMON_WAIT 3
 
-void loop() 
+const int simon_pitch_palette[] = { NOTE_C3, NOTE_D3, NOTE_E3, NOTE_F3 };
+#define SIMON_PALETTE_LENGTH 4
+#define SIMON_WIN_LENGTH 32
+int simon_melody[SIMON_WIN_LENGTH];
+int simon_current_length=0;
+int simon_cursor;
+void initSimon(){
+  simon_current_length=1;
+  for ( int i = 0; i < SIMON_WIN_LENGTH; i++ ) {
+    simon_melody[i] = random(SIMON_PALETTE_LENGTH);
+  }
+}
+void simonTone( int index )
 {
-  if ( readButtonsBlocking() )
-  {
-    Serial.print( "buttons changed\n");
-    Serial.print( button_last_state );
-    Serial.print( "\n" );
-    cbk_rotarychange( button_last_state );
+  tone(6,simon_pitch_palette[simon_melody[index]],200);
+  cbk_hashnotes( simon_pitch_palette[simon_melody[index]]);
+  delay(350);
+  cbk_hashnotes( 0 );
+  delay(150);
+}
+int state=STATE_MENU;
+int last_state=10;
+void loop() 
+{ 
+  random();
+  if (state != last_state){
+    last_state=state;
+    Serial.print("state ");
+    Serial.print(state);
+    Serial.print("\n");
+  }
+  bool button_change = readButtonsBlocking();
+  switch ( state ){
+    case STATE_MENU:
+      if ( button_change && button_last_state == 3 ) {
+        state=STATE_SIMON_START;
+      }
+      break;
+    
+    case STATE_SIMON_START:
+      play_melody( 6,1000,START, cbk_hashnotes );
+      delay(1000);
+      initSimon();
+      state=STATE_SIMON;
+      break;
+      
+    case STATE_SIMON:
+      for ( int i = 0; i < simon_current_length; i++ ){
+        simonTone( i );    
+      }
+      simon_cursor=0;
+      state=STATE_SIMON_WAIT;
+      break;
+    
+    case STATE_SIMON_WAIT:
+      if (button_change && button_last_state) {
+        if ( button_last_state == simon_melody[simon_cursor] )
+        {
+          Serial.print("Correct ");
+          Serial.print(simon_cursor);
+          Serial.print("\n");
+          simonTone( simon_cursor ++ );
+          if ( simon_cursor == simon_current_length )
+          {
+            simon_current_length++;
+            play_melody( 6,1000,VICTORY, cbk_hashnotes );
+            delay(1000);
+            state=STATE_SIMON;
+          }
+        }
+        else
+        {
+          play_melody( 6, 1000, HAIRCUT, cbk_hashnotes );
+          delay(1500);
+          state=STATE_SIMON_START;
+        }
+      }
   }
   
 }
