@@ -12,6 +12,10 @@
  *  Connect pin C to +5v. Pin A to Pin 2 and Pin B to Pin 3 (because they are both
  *  interrupts) Both should use a 10K pulldown.
  *  
+ *  TODO:
+ *   Document the pinout in the comment above
+ *   Set up notes playable by index rather than frequency
+ *   Sort out the flow of control between the rotary and the playing of notes... it resets the game when played!
  */
 #include <assert.h>
 
@@ -33,10 +37,10 @@
 #define PIN_LED_GREEN 9
 #define PIN_LED_RED 10
 // Buttons
-#define PIN_BUTTON_RED 4 // TODO find more pins! By moving the rotary or LEDs
-#define PIN_BUTTON_GREEN 6
-#define PIN_BUTTON_BLUE 5
-#define PIN_BUTTON_LELLOW 6
+#define PIN_BUTTON_RED 5
+#define PIN_BUTTON_GREEN 4
+#define PIN_BUTTON_BLUE A4
+#define PIN_BUTTON_LELLOW A5
 
 ////////////////////////////////////////////////////////////////////////////////
 // RGB
@@ -187,18 +191,17 @@ void initLED() {
   pinMode( PIN_LED_LELLOW, OUTPUT );
 }
 
-void setLED( int color ){
-  digitalWrite( PIN_LED_RED, color == RGB_RED );
-  digitalWrite( PIN_LED_GREEN, color == RGB_GREEN );
-  digitalWrite( PIN_LED_BLUE, color == RGB_BLUE );
-  digitalWrite( PIN_LED_LELLOW, color == RGB_LELLOW );
+void setLED( int index ){
+  digitalWrite( PIN_LED_RED, index == 1 );
+  digitalWrite( PIN_LED_GREEN, index == 2 );
+  digitalWrite( PIN_LED_BLUE, index == 3 );
+  digitalWrite( PIN_LED_LELLOW, index == 4 );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Buttons
 ////////////////////////////////////////////////////////////////////////////////
 
-#define BUTTON_MASK ( ( 2<<PIN_BUTTON_RED ) | ( 2<<PIN_BUTTON_GREEN ) | ( 2<<PIN_BUTTON_BLUE ) | ( 2<<PIN_BUTTON_LELLOW ) )
  
 void initButtons() {
   pinMode( PIN_BUTTON_RED, INPUT );
@@ -265,13 +268,16 @@ void play_melody( int pin, int period, const int melody[][2], void (*callback)(i
 const int sequence[] = { RGB_BLACK, RGB_RED, RGB_GREEN, RGB_BLUE, RGB_LELLOW };
 const int SEQ_LENGTH=5;
 
+int current_rotary=0;
+int last_rotary=0;
 
 // Callback when the rotary has moved one or more clicks.
 // change this for your application
 void cbk_rotarychange( int pos )
 {
   setRGB( sequence[ pos ] );
-  setLED( sequence[ pos ] );
+  setLED( pos );
+  current_rotary=pos;
   Serial.print( pos );
   Serial.print( '\n' );
 }
@@ -292,7 +298,7 @@ void setup() {
   setRGB( RGB_MAGENTA );
 
   initLED();
-  setLED( RGB_BLACK );
+  setLED( 0 );
   
   // ROTARY
   initRotary( cbk_rotarychange );  
@@ -309,6 +315,7 @@ void setup() {
 #define STATE_SIMON_START 1
 #define STATE_SIMON 2
 #define STATE_SIMON_WAIT 3
+#define STATE_PLAYER 4
 
 const int simon_pitch_palette[] = { NOTE_C3, NOTE_D3, NOTE_E3, NOTE_F3 };
 #define SIMON_PALETTE_LENGTH 4
@@ -330,10 +337,20 @@ void simonTone( int index )
   cbk_hashnotes( 0 );
   delay(150);
 }
+
+int buttonToLed( int button ){
+  return 1<<(button-1);
+}
+
 int state=STATE_MENU;
 int last_state=10;
 void loop() 
 { 
+  if ( last_rotary != current_rotary )
+  {
+    state = STATE_MENU;
+    last_rotary=current_rotary;
+  }
   random();
   if (state != last_state){
     last_state=state;
@@ -341,11 +358,29 @@ void loop()
     Serial.print(state);
     Serial.print("\n");
   }
+
   bool button_change = readButtonsBlocking();
+  if ( button_change ){
+    Serial.print("Buttons ");
+    Serial.print(button_last_state);
+    Serial.print("\n");
+  }
   switch ( state ){
     case STATE_MENU:
-      if ( button_change && button_last_state == 3 ) {
-        state=STATE_SIMON_START;
+      if ( button_change && button_last_state  ) {
+        switch (current_rotary )
+        {
+          case 1:
+            state=STATE_SIMON_START;
+            Serial.print("Simon\n");
+            break;
+          case 2:
+            state=STATE_PLAYER;
+            Serial.print("Player\n");
+            break;
+          default:
+            Serial.print("Invalid Rotary\n");
+        }
       }
       break;
     
@@ -386,6 +421,11 @@ void loop()
           delay(1500);
           state=STATE_SIMON_START;
         }
+      }
+      break;
+    case STATE_PLAYER:
+      if (button_change ) {
+        setLED( button_last_state);
       }
   }
   
