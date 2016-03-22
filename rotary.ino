@@ -236,17 +236,18 @@ bool readButtonsBlocking() {
 // Melody
 ////////////////////////////////////////////////////////////////////////////////
 #include "pitches.h"
-void play_melody( int pin, int period, const int melody[][2], void (*callback)(int) ) {
+
+void play_melody( int pin, int period, const struct note_t melody[], void (*callback)(int) ) {
   // iterate over the notes of the melody:
-  for (int thisNote = 0; melody[thisNote][1]; thisNote++) {
+  for (int thisNote = 0; melody[thisNote].value; thisNote++) {
 
     // to calculate the note duration, take one second
     // divided by the note type.
     //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-    int noteDuration = period / melody[thisNote][1];
-    tone(pin, melody[thisNote][0], noteDuration);
+    int noteDuration = period / melody[thisNote].value;
+    tone(pin, PITCHES[melody[thisNote].index], noteDuration);
     if ( callback ) {
-      (*callback)(melody[thisNote][0]);
+      (*callback)(melody[thisNote].index);
     }
     // to distinguish the notes, set a minimum time between them.
     // the note's duration + 30% seems to work well:
@@ -287,9 +288,9 @@ void cbk_rotarychange( int pos )
 void cbk_hashnotes( int note )
 {
   if (note) {
-    cbk_rotarychange( 1  + ((note ^ (note >> 4 ) ^ (note >> 8) ^ (note >> 12)) % (SEQ_LENGTH-1)) );
+    setLED( 1  + ((note ^ (note >> 4 ) ^ (note >> 8) ^ (note >> 12)) % (SEQ_LENGTH-1)) );
   } else {
-    cbk_rotarychange( 0 );
+    setLED( 0 );
   }
 }
 void setup() {
@@ -331,7 +332,7 @@ void initSimon(){
 }
 void simonTone( int index )
 {
-  tone(6,simon_pitch_palette[simon_melody[index]],200);
+  tone(6,PITCHES[simon_pitch_palette[simon_melody[index]]],200);
   cbk_hashnotes( simon_pitch_palette[simon_melody[index]]);
   delay(350);
   cbk_hashnotes( 0 );
