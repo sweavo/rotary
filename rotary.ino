@@ -1,51 +1,58 @@
-/* Driving the spark fun RGB rotary encoder.
+/*  # Rotary encoder
+ *   
+ *  This project's purpose is to drive the spark fun RGB rotary encoder only.
+ *  
+ *  ## TODO:
+ *   
+ *  * clean it up and get it working
+ *   
+ *  ## REFERENCE:
  *  
  *  http://cdn.sparkfun.com/datasheets/Components/Switches/EC12PLRGBSDVBF-D-25K-24-24C-6108-6HSPEC.pdf
  *  http://cdn.sparkfun.com/datasheets/Components/Switches/EC12PLRGBSDVBF-D-25K-24-24C-6108-6H.pdf
  *  
- *  LEDs:
- *  Connect pin 13, 12, 11 to R,G,B (pins 1,2,4 of the Rotary package) through 
- *  330Ohm resistors and connect +5v to pin 5. Pin 3 of the rotary package, 
- *  the push button, connects through 10K current-limiter to arduino pin 3. 
- * 
- *  Encoder:
- *  Connect pin C to +5v. Pin A to Pin 2 and Pin B to Pin 3 (because they are both
- *  interrupts) Both should use a 10K pulldown.
+ *  ## Wiring
  *  
- *  TODO:
- *   Document the pinout in the comment above
- *   Set up notes playable by index rather than frequency
- *   Sort out the flow of control between the rotary and the playing of notes... it resets the game when played!
+ *    The pin names given here are defined in `Pin Definitions` below.
+ *    
+ *  ### Encoder:
+ *  
+ *  ROTARY_PIN_A and ROTARY_PIN_B should both be interrupt pins (e.g. 2 and 3 on an Uno).
+ *  
+ *  Connect
+ *  * pin C directly to +5v
+ *  * pin A to ROTARY_PIN_A with a 10k pulldown
+ *  * pin B to ROTARY_PIN_B with a 10k pulldown
+ *  
+ *  ### LEDs:
+ *  
+ *  * Connect pin PIN_NOT_RED, PIN_NOT_GREEN, PIN_NOT_BLUE to R,G,B (pins 1,2,4 of the Rotary package) through 
+ *  330Ohm resistors. 
+ *  * Connect +5v to pin 5. 
+ *  
+ *  ### Push button:
+ *  Pin 3 of the rotary package, the push button, connects through 10K current-limiter to PIN_ROTARY_PUSH. 
+ * 
  */
+ 
 #include <assert.h>
-
 ////////////////////////////////////////////////////////////////////////////////
 // Pin definitions.
 ////////////////////////////////////////////////////////////////////////////////
-
 // Negative logic for LEDs,  i.e. LED is on when pin is low
 #define PIN_NOT_RED 13  
 #define PIN_NOT_GREEN 12
 #define PIN_NOT_BLUE 11 
 // Switches in rotary
-#define PIN_ROTARY_PUSH 10 
 #define PIN_ROTARY_A 2
 #define PIN_ROTARY_B 3
-// Separate LEDs
-#define PIN_LED_LELLOW 7
-#define PIN_LED_BLUE 8
-#define PIN_LED_GREEN 9
-#define PIN_LED_RED 10
-// Buttons
-#define PIN_BUTTON_RED 5
-#define PIN_BUTTON_GREEN 4
-#define PIN_BUTTON_BLUE A4
-#define PIN_BUTTON_LELLOW A5
+#define PIN_ROTARY_PUSH 10 
+
 
 ////////////////////////////////////////////////////////////////////////////////
-// RGB
+// Driver for RGB LEDs in rotary
 ////////////////////////////////////////////////////////////////////////////////
-// Symbolic constants for getting colors out of the RGB leds
+// Bitmasks for getting colors out of the RGB LEDs
 #define RGB_BLACK   0
 #define RGB_RED     1
 #define RGB_GREEN   2
@@ -118,7 +125,7 @@ void initAlarmService()
 #define ROTARY_TIMEOUT  4
 
 // How many unique values rotary_position can take
-#define ROTARY_MODULO 5
+#define ROTARY_MODULO 8
 
 // END user configuration
 
@@ -180,94 +187,14 @@ void isr_rotaryupdated(){
   rotary_last_graycode = sample >> 2;
   setAlarm( ROTARY_TIMEOUT, cbk_rotary_quiescent );
 }
-////////////////////////////////////////////////////////////////////////////////
-//  SEPARATE LEDS
-////////////////////////////////////////////////////////////////////////////////
 
-void initLED() {
-  pinMode( PIN_LED_RED, OUTPUT );
-  pinMode( PIN_LED_GREEN, OUTPUT );
-  pinMode( PIN_LED_BLUE, OUTPUT );
-  pinMode( PIN_LED_LELLOW, OUTPUT );
-}
-
-void setLED( int index ){
-  digitalWrite( PIN_LED_RED, index == 1 );
-  digitalWrite( PIN_LED_GREEN, index == 2 );
-  digitalWrite( PIN_LED_BLUE, index == 3 );
-  digitalWrite( PIN_LED_LELLOW, index == 4 );
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Buttons
-////////////////////////////////////////////////////////////////////////////////
-
- 
-void initButtons() {
-  pinMode( PIN_BUTTON_RED, INPUT );
-  pinMode( PIN_BUTTON_GREEN, INPUT );
-  pinMode( PIN_BUTTON_BLUE, INPUT );
-  pinMode( PIN_BUTTON_LELLOW, INPUT );
-}
-
-int button_last_state = 0;
-int readButtonsRaw() {
-  // Returns the index of the pushed button, not a bitmask.
-  return digitalRead( PIN_BUTTON_RED ) ? 1
-        : digitalRead( PIN_BUTTON_GREEN ) ? 2 
-        : digitalRead( PIN_BUTTON_BLUE ) ? 3 
-        : digitalRead( PIN_BUTTON_LELLOW ) ? 4 :0;
-}
-bool readButtonsBlocking() {
-  if ( readButtonsRaw() != button_last_state ) 
-  {
-    delay( 10 );
-    int readButtons = readButtonsRaw();
-    if ( readButtons != button_last_state ) 
-    {
-      button_last_state = readButtons;
-      return true;
-    }
-  }
-  return false;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Melody
-////////////////////////////////////////////////////////////////////////////////
-#include "pitches.h"
-
-void play_melody( int pin, int period, const struct note_t melody[], void (*callback)(int) ) {
-  // iterate over the notes of the melody:
-  for (int thisNote = 0; melody[thisNote].value; thisNote++) {
-
-    // to calculate the note duration, take one second
-    // divided by the note type.
-    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-    int noteDuration = period / melody[thisNote].value;
-    tone(pin, PITCHES[melody[thisNote].index], noteDuration);
-    if ( callback ) {
-      (*callback)(melody[thisNote].index);
-    }
-    // to distinguish the notes, set a minimum time between them.
-    // the note's duration + 30% seems to work well:
-    int pauseBetweenNotes = noteDuration * 1.30;
-    delay(pauseBetweenNotes);
-    // stop the tone playing:
-    noTone(pin);
-    if ( callback ) {
-      (*callback)(0);
-    }
-  }
-}
 ////////////////////////////////////////////////////////////////////////////////
 // APPLICATION CODE
 ////////////////////////////////////////////////////////////////////////////////
-#include "tunes.h"
 
 // A sequence of colors to show the rotary working
-const int sequence[] = { RGB_BLACK, RGB_RED, RGB_GREEN, RGB_BLUE, RGB_LELLOW };
-const int SEQ_LENGTH=5;
+const int sequence[] = { RGB_BLACK, RGB_RED, RGB_GREEN, RGB_BLUE, RGB_LELLOW, RGB_MAGENTA, RGB_CYAN, RGB_WHITE };
+const int SEQ_LENGTH=8;
 
 int current_rotary=0;
 int last_rotary=0;
@@ -277,29 +204,13 @@ int last_rotary=0;
 void cbk_rotarychange( int pos )
 {
   setRGB( sequence[ pos ] );
-  setLED( pos );
   current_rotary=pos;
-  Serial.print( pos );
-  Serial.print( '\n' );
 }
 
-// Note values are disappointingly nonrandom when it comes to lighting LEDs.
-// perturb the values here to get more variety
-void cbk_hashnotes( int note )
-{
-  if (note) {
-    setLED( 1  + ((note ^ (note >> 4 ) ^ (note >> 8) ^ (note >> 12)) % (SEQ_LENGTH-1)) );
-  } else {
-    setLED( 0 );
-  }
-}
 void setup() {
   // LEDs in rotary switch
   initRGB();
   setRGB( RGB_MAGENTA );
-
-  initLED();
-  setLED( 0 );
   
   // ROTARY
   initRotary( cbk_rotarychange );  
@@ -312,122 +223,12 @@ void setup() {
   Serial.begin(9600);
 }
 
-#define STATE_MENU 0
-#define STATE_SIMON_START 1
-#define STATE_SIMON 2
-#define STATE_SIMON_WAIT 3
-#define STATE_PLAYER 4
-
-const int simon_pitch_palette[] = { NOTE_C3, NOTE_D3, NOTE_E3, NOTE_F3 };
-#define SIMON_PALETTE_LENGTH 4
-#define SIMON_WIN_LENGTH 32
-int simon_melody[SIMON_WIN_LENGTH];
-int simon_current_length=0;
-int simon_cursor;
-void initSimon(){
-  simon_current_length=1;
-  for ( int i = 0; i < SIMON_WIN_LENGTH; i++ ) {
-    simon_melody[i] = random(SIMON_PALETTE_LENGTH);
-  }
-}
-void simonTone( int index )
-{
-  tone(6,PITCHES[simon_pitch_palette[simon_melody[index]]],200);
-  cbk_hashnotes( simon_pitch_palette[simon_melody[index]]);
-  delay(350);
-  cbk_hashnotes( 0 );
-  delay(150);
-}
-
-int buttonToLed( int button ){
-  return 1<<(button-1);
-}
-
-int state=STATE_MENU;
-int last_state=10;
 void loop() 
 { 
   if ( last_rotary != current_rotary )
   {
-    state = STATE_MENU;
     last_rotary=current_rotary;
-  }
-  random();
-  if (state != last_state){
-    last_state=state;
-    Serial.print("state ");
-    Serial.print(state);
-    Serial.print("\n");
-  }
-
-  bool button_change = readButtonsBlocking();
-  if ( button_change ){
-    Serial.print("Buttons ");
-    Serial.print(button_last_state);
-    Serial.print("\n");
-  }
-  switch ( state ){
-    case STATE_MENU:
-      if ( button_change && button_last_state  ) {
-        switch (current_rotary )
-        {
-          case 1:
-            state=STATE_SIMON_START;
-            Serial.print("Simon\n");
-            break;
-          case 2:
-            state=STATE_PLAYER;
-            Serial.print("Player\n");
-            break;
-          default:
-            Serial.print("Invalid Rotary\n");
-        }
-      }
-      break;
-    
-    case STATE_SIMON_START:
-      play_melody( 6,1000,START, cbk_hashnotes );
-      delay(1000);
-      initSimon();
-      state=STATE_SIMON;
-      break;
-      
-    case STATE_SIMON:
-      for ( int i = 0; i < simon_current_length; i++ ){
-        simonTone( i );    
-      }
-      simon_cursor=0;
-      state=STATE_SIMON_WAIT;
-      break;
-    
-    case STATE_SIMON_WAIT:
-      if (button_change && button_last_state) {
-        if ( button_last_state == simon_melody[simon_cursor] )
-        {
-          Serial.print("Correct ");
-          Serial.print(simon_cursor);
-          Serial.print("\n");
-          simonTone( simon_cursor ++ );
-          if ( simon_cursor == simon_current_length )
-          {
-            simon_current_length++;
-            play_melody( 6,1000,VICTORY, cbk_hashnotes );
-            delay(1000);
-            state=STATE_SIMON;
-          }
-        }
-        else
-        {
-          play_melody( 6, 1000, HAIRCUT, cbk_hashnotes );
-          delay(1500);
-          state=STATE_SIMON_START;
-        }
-      }
-      break;
-    case STATE_PLAYER:
-      if (button_change ) {
-        setLED( button_last_state);
-      }
+    Serial.println( current_rotary );
   }
   
 }
