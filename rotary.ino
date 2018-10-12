@@ -31,7 +31,6 @@
  *  Pin 3 of the rotary package, the push button, connects to PIN_ROTARY_PUSH with a 10k pulldown resistor
  */
  
-#include <assert.h>
 ////////////////////////////////////////////////////////////////////////////////
 // Pin definitions.
 ////////////////////////////////////////////////////////////////////////////////
@@ -136,6 +135,13 @@ int rotary_last_graycode;
 // callback when the rotary has changed position
 void (*rotary_change_callback)(int);
 
+#if ( PIN_ROTARY_A != 2 )
+#warning PIN_ROTARY_A is not 2. I hope you used a pin with interrupt support.
+#endif
+#if ( PIN_ROTARY_B != 3 )
+#warning PIN_ROTARY_B is not 3. I hope you used a pin with interrupt support.
+#endif
+
 void initRotary( void (*callback)(int) )
 {
   rotary_change_callback = callback;
@@ -147,7 +153,6 @@ void initRotary( void (*callback)(int) )
   attachInterrupt( digitalPinToInterrupt( PIN_ROTARY_B ),
                    isr_rotaryupdated,
                    CHANGE );
-  assert( ( PIN_ROTARY_A == 2 ) && ( PIN_ROTARY_B == 3 ) );
   rotary_last_graycode = ( PIND & 12 ) >>2;
 
   pinMode( PIN_ROTARY_PUSH, INPUT );
