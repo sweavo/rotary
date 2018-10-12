@@ -2,10 +2,6 @@
  *   
  *  This project's purpose is to drive the spark fun RGB rotary encoder only.
  *  
- *  ## TODO:
- *   
- *  * What is the wiring of the push button? I suspect it connects MS to C. Or does it connect MS to +5?
- *   
  *  ## REFERENCE:
  *  
  *  http://cdn.sparkfun.com/datasheets/Components/Switches/EC12PLRGBSDVBF-D-25K-24-24C-6108-6HSPEC.pdf
@@ -13,25 +9,26 @@
  *  
  *  ## Wiring
  *  
- *    The pin names given here are defined in `Pin Definitions` below.
+ *  The pin names given here are defined in `Pin Definitions` below.
  *    
  *  ### Encoder:
  *  
  *  ROTARY_PIN_A and ROTARY_PIN_B should both be interrupt pins (e.g. 2 and 3 on an Uno).
  *  
+ *  We don't need pullup resistors because this sketch turns on the internal pullups.
+ *  
  *  Connect
  *  * pin C directly to +5v
- *  * pin A to ROTARY_PIN_A with a 10k pulldown
- *  * pin B to ROTARY_PIN_B with a 10k pulldown
+ *  * pin A to ROTARY_PIN_A.
+ *  * pin B to ROTARY_PIN_B.
  *  
  *  ### LEDs:
  *  
- *  * Connect R,G,B (pins 1,2,4 of the Rotary package) through 330Ohm resistors to PIN_NOT_RED, PIN_NOT_GREEN, PIN_NOT_BLUE on arduino.
+ *  * Connect R,G,B (pins 1,2,4 of the Rotary package) through 330Ohm current-limiting resistors to PIN_NOT_RED, PIN_NOT_GREEN, PIN_NOT_BLUE on arduino.
  *  * Connect pin 5 (+5v) to +5v. 
  *  
  *  ### Push button:
- *  Pin 3 of the rotary package, the push button, connects through 10K current-limiter to PIN_ROTARY_PUSH. 
- *  **TODO** does this need a pulldown?!
+ *  Pin 3 of the rotary package, the push button, connects to PIN_ROTARY_PUSH with a 10k pulldown resistor
  */
  
 #include <assert.h>
@@ -129,8 +126,8 @@ void initAlarmService()
 // END user configuration
 
 // Clicks of rotary switch
-int rotary_position=0; 
-// Transitions of gray code (4 to a click). 
+int rotary_position=0;
+// Transitions of gray code (4 to a click).
 // Set to 2 so that you have the same amount of quarters to go 
 // in either direction to effect a change. 
 int rotary_quarters=2;
@@ -142,8 +139,8 @@ void (*rotary_change_callback)(int);
 void initRotary( void (*callback)(int) )
 {
   rotary_change_callback = callback;
-  pinMode(PIN_ROTARY_A,INPUT);
-  pinMode(PIN_ROTARY_B,INPUT);
+  pinMode(PIN_ROTARY_A,INPUT_PULLUP);
+  pinMode(PIN_ROTARY_B,INPUT_PULLUP);
   attachInterrupt( digitalPinToInterrupt( PIN_ROTARY_A ),
                    isr_rotaryupdated,
                    CHANGE );
@@ -224,16 +221,26 @@ void setup() {
   Serial.begin(9600);
 }
 
+int last_push=0;
+
 void loop() 
 { 
+  int push;
+  
   if ( last_rotary != current_rotary )
   {
     last_rotary=current_rotary;
     Serial.println( current_rotary );
   }
-  if ( ! digitalRead( PIN_ROTARY_PUSH ) )
+  push = digitalRead( PIN_ROTARY_PUSH );
+  if ( push != last_push )
   {
-    Serial.println( "push" );
+    last_push=push;
+
+    if (push)
+    {
+      Serial.println( "push" );
+    }
   }
   delay( 25 );
 }
