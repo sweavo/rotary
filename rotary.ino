@@ -18,7 +18,7 @@
  *  We don't need pullup resistors because this sketch turns on the internal pullups.
  *  
  *  Connect
- *  * pin C directly to +5v
+ *  * pin C directly to GND
  *  * pin A to ROTARY_PIN_A.
  *  * pin B to ROTARY_PIN_B.
  *  
