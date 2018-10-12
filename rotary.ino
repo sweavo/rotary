@@ -26,13 +26,12 @@
  *  
  *  ### LEDs:
  *  
- *  * Connect pin PIN_NOT_RED, PIN_NOT_GREEN, PIN_NOT_BLUE to R,G,B (pins 1,2,4 of the Rotary package) through 
- *  330Ohm resistors. 
- *  * Connect +5v to pin 5. 
+ *  * Connect R,G,B (pins 1,2,4 of the Rotary package) through 330Ohm resistors to PIN_NOT_RED, PIN_NOT_GREEN, PIN_NOT_BLUE on arduino.
+ *  * Connect pin 5 (+5v) to +5v. 
  *  
  *  ### Push button:
  *  Pin 3 of the rotary package, the push button, connects through 10K current-limiter to PIN_ROTARY_PUSH. 
- * 
+ *  **TODO** does this need a pulldown?!
  */
  
 #include <assert.h>
@@ -46,7 +45,7 @@
 // Switches in rotary
 #define PIN_ROTARY_A 2
 #define PIN_ROTARY_B 3
-#define PIN_ROTARY_PUSH 10 
+#define PIN_ROTARY_PUSH 4
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -153,6 +152,8 @@ void initRotary( void (*callback)(int) )
                    CHANGE );
   assert( ( PIN_ROTARY_A == 2 ) && ( PIN_ROTARY_B == 3 ) );
   rotary_last_graycode = ( PIND & 12 ) >>2;
+
+  pinMode( PIN_ROTARY_PUSH, INPUT );
 }
 
 // Callback when no gray code changes have occured in the 
@@ -230,6 +231,10 @@ void loop()
     last_rotary=current_rotary;
     Serial.println( current_rotary );
   }
-  
+  if ( ! digitalRead( PIN_ROTARY_PUSH ) )
+  {
+    Serial.println( "push" );
+  }
+  delay( 25 );
 }
 
