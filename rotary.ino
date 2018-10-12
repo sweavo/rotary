@@ -4,7 +4,7 @@
  *  
  *  ## TODO:
  *   
- *  * clean it up and get it working
+ *  * What is the wiring of the push button? I suspect it connects MS to C. Or does it connect MS to +5?
  *   
  *  ## REFERENCE:
  *  
