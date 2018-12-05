@@ -39,11 +39,11 @@
 // Negative logic for LEDs,  i.e. LED is on when pin is low
 #define PIN_NOT_RED 13  
 #define PIN_NOT_GREEN 12
-#define PIN_NOT_BLUE 11 
+#define PIN_NOT_BLUE 10 
 // Switches in rotary
 #define PIN_ROTARY_A 2
 #define PIN_ROTARY_B 3
-#define PIN_ROTARY_PUSH 4
+#define PIN_ROTARY_PUSH 11
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +54,7 @@
 #define RGB_RED     1
 #define RGB_GREEN   2
 #define RGB_BLUE    4
-#define RGB_LELLOW  3
+#define RGB_YELLOW  3
 #define RGB_MAGENTA 5
 #define RGB_CYAN    6
 #define RGB_WHITE   7
@@ -76,7 +76,7 @@ void setRGB( int color);
 #define ROTARY_TIMEOUT  4
 
 // How many unique values rotary_position can take
-#define ROTARY_MODULO 8
+#define ROTARY_MODULO (16384)
 
 // END user configuration
 
@@ -87,6 +87,9 @@ void setRGB( int color);
 #warning PIN_ROTARY_B is not 3. I hope you used a pin with interrupt support.
 #endif
 
-void initRotary( void (*callback)(int) );
+
+typedef uint16_t rotary_position_t;
+
+void initRotary( void (*callback)(rotary_position_t) );
 
 #endif /* ROTARY_H */

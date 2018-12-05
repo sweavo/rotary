@@ -53,35 +53,20 @@ void initAlarmService()
   TCCR1B |= _BV(WGM12);  // I think this sets CTC mode
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// ROTARY handling
-////////////////////////////////////////////////////////////////////////////////
-
-// BEGIN user configuration
-
-// How long must there have been no changes to the gray code before we consider
-// firing a rotary change event?
-#define ROTARY_TIMEOUT  4
-
-// How many unique values rotary_position can take
-#define ROTARY_MODULO 8
-
-// END user configuration
-
 void isr_rotaryupdated();
 
 // Clicks of rotary switch
-static int rotary_position=0;
+static rotary_position_t rotary_position=0;
 // Transitions of gray code (4 to a click).
 // Set to 2 so that you have the same amount of quarters to go 
 // in either direction to effect a change. 
-static int rotary_quarters=2;
+static uint16_t rotary_quarters=2;
 // bits 0 and 1 are the A and B of the rotary. Initialized from pins in setup
-static int rotary_last_graycode;
+static uint16_t rotary_last_graycode;
 // callback when the rotary has changed position
-static void (*rotary_change_callback)(int);
+static void (*rotary_change_callback)(rotary_position_t);
 
-void initRotary( void (*callback)(int) )
+void initRotary( void (*callback)(rotary_position_t) )
 {
   rotary_change_callback = callback;
   pinMode(PIN_ROTARY_A,INPUT_PULLUP);
@@ -105,7 +90,7 @@ void initRotary( void (*callback)(int) )
 // rotation, and if it has changed, calls the cbk_rotarychange.
 void cbk_rotary_quiescent()
 {
-  int new_position = rotary_quarters >> 2;
+  uint16_t new_position = rotary_quarters >> 2;
   if ( new_position != rotary_position )
   {
     (*rotary_change_callback)( new_position );
@@ -122,7 +107,7 @@ void cbk_rotary_quiescent()
 // wind up with the correct value. Each time an interrupt
 // is received we start an alarm so that we will only update
 // rotary_clicks after any bouncing has settled down.
-static const int ROTATION_TABLE[] = {  0, (ROTARY_MODULO<<2)-1, 1, 0, 1, 0,  0, (ROTARY_MODULO<<2)-1,
+static const uint16_t ROTATION_TABLE[] = {  0, (ROTARY_MODULO<<2)-1, 1, 0, 1, 0,  0, (ROTARY_MODULO<<2)-1,
                                (ROTARY_MODULO<<2)-1,  0, 0, 1, 0, 1, (ROTARY_MODULO<<2)-1,  0 };
 void isr_rotaryupdated(){
   int sample = PIND & 12;
@@ -131,3 +116,4 @@ void isr_rotaryupdated(){
   rotary_last_graycode = sample >> 2;
   setAlarm( ROTARY_TIMEOUT, cbk_rotary_quiescent );
 }
+
