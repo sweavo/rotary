@@ -1,0 +1,28 @@
+#######################################
+# Syntax Coloring Map For Adafruit_NeoPixel
+####################################### 
+# Class
+#######################################
+
+#######################################
+# Methods and Functions 
+#######################################	
+
+initRGB KEYWORD2
+setRGB  KEYWORD2
+initRotary  KEYWORD2
+
+
+#######################################
+# Constants
+#######################################
+
+RGB_BLACK   LITERAL1
+RGB_REDi    LITERAL1
+RGB_GREEN   LITERAL1
+RGB_BLUE    LITERAL1
+RGB_YELLOW  LITERAL1
+RGB_MAGENTA LITERAL1
+RGB_CYAN    LITERAL1
+RGB_WHITE   LITERAL1
+
