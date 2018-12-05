@@ -1,6 +1,6 @@
 # Rotary encoder
 
-This project's purpose is to drive the spark fun RGB rotary encoder only.
+This project drives the spark fun RGB rotary encoder with pushbutton and RGB LED.
 
 ## Install:
 
