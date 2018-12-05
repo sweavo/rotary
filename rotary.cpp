@@ -15,6 +15,7 @@ void initRGB()
   pinMode(PIN_NOT_RED, OUTPUT);
   pinMode(PIN_NOT_GREEN, OUTPUT);
   pinMode(PIN_NOT_BLUE, OUTPUT);
+  setRGB( RGB_BLACK );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
