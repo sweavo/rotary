@@ -15,7 +15,9 @@ http://cdn.sparkfun.com/datasheets/Components/Switches/EC12PLRGBSDVBF-D-25K-24-2
 
 ## Wiring
 
-The pin names given here are defined in `Pin Definitions` in `rotary.h`
+The pin names given in the library and this documentation are defined in `Pin Definitions` in `rotary.h`
+
+ ![](rotary basic_bb.svg)
   
 ### Encoder:
 
