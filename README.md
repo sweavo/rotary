@@ -2,6 +2,8 @@
 
 This project drives the spark fun RGB rotary encoder with pushbutton and RGB LED.
 
+It was written for Uno, and contains some pretty low-level stuff that doesn't work on my ESP8266.
+
 ## Install:
 
 * Name the extracted/cloned folder "rotary" and put it in your `Arduino/libraries` folder.
