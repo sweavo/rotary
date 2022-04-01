@@ -2,7 +2,8 @@
 
 This project drives the spark fun RGB rotary encoder with pushbutton and RGB LED.
 
-It was written for Uno, and contains some pretty low-level stuff that doesn't work on my ESP8266.
+It's currently tested on Arduino Uno and ESP32
+
 
 ## Install:
 
@@ -23,7 +24,7 @@ The pin names given in the library and this documentation are defined in `Pin De
   
 ### Encoder:
 
-`ROTARY_PIN_A` and `ROTARY_PIN_B` should both be interrupt pins (e.g. 2 and 3 on an Uno).
+`ROTARY_PIN_A` and `ROTARY_PIN_B` should both be interrupt pins (e.g. 2 and 3 on an Uno) and must be adjacent (e.g. use 12 and 13 on the ESP32).
 
 You don't need pullup resistors for the example because it turns on the internal pullups.
 
@@ -37,10 +38,13 @@ Connect
 * Connect R,G,B (pins 1,2,4 of the Rotary package) through 330Ohm current-limiting resistors to `PIN_NOT_RED`, `PIN_NOT_GREEN`, `PIN_NOT_BLUE` on Arduino.
 * Connect Rotary package pin 5 (+5v) to +5v. 
 
+The LEDs have not been tested on ESP32 but should be target-independent.
+
 ### Push button:
 Pin 3 of the rotary package, the push button, connects to `PIN_ROTARY_PUSH` with a 10k pulldown resistor
 
 ## Apologies
 
 * I haven't read the API guidelines yet. I expect I have committed crimes here.
-* The library uses quite a lot of resources (both interrupt pins AND a timer ISR). I welcome contributions that simplify it.
+* The library uses quite a lot of resources two interrupt pins AND a timer ISR). But it's light on compute cycles at runtime.
+
