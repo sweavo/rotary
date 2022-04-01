@@ -41,10 +41,9 @@
 #define PIN_NOT_GREEN 12
 #define PIN_NOT_BLUE 10 
 // Switches in rotary
-#define PIN_ROTARY_A 2
-#define PIN_ROTARY_B 3
+#define PIN_ROTARY_A 12
+#define PIN_ROTARY_B 13
 #define PIN_ROTARY_PUSH 11
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Driver for RGB LEDs in rotary
@@ -79,13 +78,6 @@ void setRGB( int color);
 #define ROTARY_MODULO (16384)
 
 // END user configuration
-
-#if ( PIN_ROTARY_A != 2 )
-#warning PIN_ROTARY_A is not 2. I hope you used a pin with interrupt support.
-#endif
-#if ( PIN_ROTARY_B != 3 )
-#warning PIN_ROTARY_B is not 3. I hope you used a pin with interrupt support.
-#endif
 
 
 typedef uint16_t rotary_position_t;
